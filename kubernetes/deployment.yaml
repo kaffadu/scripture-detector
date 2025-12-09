@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scripture-detector
+  namespace: default
+  labels:
+    app: scripture-detector
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scripture-detector
+  template:
+    metadata:
+      labels:
+        app: scripture-detector
+    spec:
+      containers:
+      - name: main
+        image: scripture-detector:latest
+        ports:
+        - containerPort: 8765
+          name: websocket
+        env:
+        - name: BIBLE_API_KEY
+          valueFrom:
+            configMapKeyRef:
+              name: scripture-detector-config
+              key: BIBLE_API_KEY
+        - name: REDIS_HOST
+          value: "redis-master"
+        - name: AUDIO_SAMPLE_RATE
+          valueFrom:
+            configMapKeyRef:
+              name: scripture-detector-config
+              key: AUDIO_SAMPLE_RATE
+        - name: DEFAULT_BIBLE_VERSION
+          valueFrom:
+            configMapKeyRef:
+              name: scripture-detector-config
+              key: DEFAULT_BIBLE_VERSION
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        volumeMounts:
+        - name: dev-snd
+          mountPath: /dev/snd
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+          name: redis
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+      volumes:
+      - name: dev-snd
+        hostPath:
+          path: /dev/snd
+          type: Directory
+      - name: redis-data
+        emptyDir: {}

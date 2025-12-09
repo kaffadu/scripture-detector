@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: scripture-ingress
+  namespace: default
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/websocket-services: "scripture-detector-service"
+spec:
+  rules:
+  - host: scripture.yourdomain.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: scripture-projection-ui
+            port:
+              number: 80
+      - path: /ws
+        pathType: Prefix
+        backend:
+          service:
+            name: scripture-detector-service
+            port:
+              number: 8765

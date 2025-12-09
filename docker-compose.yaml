@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  scripture-app:
+    build: ./app
+    ports:
+      - "8765:8765"
+    environment:
+      - BIBLE_API_KEY=${BIBLE_API_KEY}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - /dev/shm:/dev/shm
+    depends_on:
+      - redis
+    devices:
+      - /dev/snd:/dev/snd  # For audio input
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  projection-ui:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./projection-ui:/usr/share/nginx/html
+    depends_on:
+      - scripture-app
+    restart: unless-stopped
+
+volumes:
+  redis_data:

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scripture-detector-config
+  namespace: default
+data:
+  BIBLE_API_KEY: ""
+  AUDIO_SAMPLE_RATE: "16000"
+  DEFAULT_BIBLE_VERSION: "NKJV"
+  WEBSOCKET_PORT: "8765"
