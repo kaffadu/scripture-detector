@@ -17,15 +17,18 @@ pipeline {
         }
 
         stage('Setup Python Environment') {
+            agent {
+                docker { image 'python:3.12-slim' }
+            }
             steps {
                 sh '''
-                    # Do not run apt-get here (requires sudo). Ensure python exists on the agent.
+                    # Use the Python image that includes venv/ensurepip
                     if command -v python3 >/dev/null 2>&1; then
                         PY=python3
                     elif command -v python >/dev/null 2>&1; then
                         PY=python
                     else
-                        echo "Python is not installed on this agent. Install Python on the node or use a Docker agent/image that includes Python."
+                        echo "Python is not available in the container."
                         exit 1
                     fi
 
@@ -43,6 +46,9 @@ pipeline {
         }
 
         stage('Install Dependencies') {
+            agent {
+                docker { image 'python:3.12-slim' }
+            }
             steps {
                 sh '''
                     source "${VENV_PATH}/bin/activate"
@@ -71,6 +77,9 @@ pipeline {
         }
 
         stage('Unit Tests') {
+            agent {
+                docker { image 'python:3.12-slim' }
+            }
             steps {
                 sh '''
                     source "${VENV_PATH}/bin/activate"
