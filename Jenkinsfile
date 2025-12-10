@@ -19,11 +19,14 @@ pipeline {
             steps {
                 sh '''
                     # Install Python 3 and pip if not present
-                    command -v python3 >/dev/null 2>&1 || sudo apt update && apt install -y python3 python3-pip
+                    if ! command -v python3 >/dev/null 2>&1; then
+                        sudo apt-get update
+                        sudo apt-get install -y python3 python3-pip
+                fi
             
                     # Upgrade pip and install dependencies
-                    python3 -m pip install --upgrade pip
-                    python3 -m pip install -r app/requirements.txt
+                    python3 -m pip install --upgrade pip --user
+                    python3 -m pip install -r app/requirements.txt --user
                 '''
             }
         }
