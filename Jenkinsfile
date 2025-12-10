@@ -19,13 +19,21 @@ pipeline {
         stage('Setup Python Environment') {
             steps {
                 sh '''
-                    apt-get update
-                    apt-get install -y python3 python3-venv python3-pip
-                    python3 --version
-                    python3 -m venv "${VENV_PATH}"
+                    # Do not run apt-get here (requires sudo). Instead ensure python exists on the agent.
+                    if command -v python3 >/dev/null 2>&1; then
+                        PY=python3
+                    elif command -v python >/dev/null 2>&1; then
+                        PY=python
+                    else
+                        echo "Python is not installed on this agent. Install Python on the node or use a Docker agent/image that includes Python."
+                        exit 1
+                    fi
+
+                    $PY --version
+                    $PY -m venv "${VENV_PATH}"
 
                     if [ -f "${VENV_PATH}/bin/activate" ]; then
-                        echo "Virtual environment created"
+                        echo "Virtual environment created at ${VENV_PATH}"
                     else
                         echo "Failed to create virtual environment"
                         exit 1
@@ -131,11 +139,3 @@ pipeline {
             cleanWs()
         }
         failure {
-            emailext(
-                subject: "Pipeline Failed: ${env.JOB_NAME} - ${env.BUILD_NUMBER}",
-                body: "Check console output at ${env.BUILD_URL}",
-                to: 'team@yourdomain.com'
-            )
-        }
-    }
-}
