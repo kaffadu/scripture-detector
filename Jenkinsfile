@@ -18,7 +18,11 @@ pipeline {
 
         stage('Setup Python Environment') {
             agent {
-                docker { image 'python:3.12-slim' }
+                docker {
+                    image 'python:3.12-slim'
+                    // run container as root so it can write the mounted workspace
+                    args '--user root:root'
+                }
             }
             steps {
                 sh '''
@@ -37,6 +41,8 @@ pipeline {
 
                     if [ -f "${VENV_PATH}/bin/activate" ]; then
                         echo "Virtual environment created at ${VENV_PATH}"
+                        # make the venv directory accessible from the host Jenkins user
+                        chmod -R a+rwX "${VENV_PATH}" || true
                     else
                         echo "Failed to create virtual environment"
                         exit 1
@@ -47,16 +53,28 @@ pipeline {
 
         stage('Install Dependencies') {
             agent {
-                docker { image 'python:3.12-slim' }
+                docker {
+                    image 'python:3.12-slim'
+                    args '--user root:root'
+                }
             }
             steps {
                 sh '''
-                    source "${VENV_PATH}/bin/activate"
+                    # Use the venv created in workspace
+                    if [ -f "${VENV_PATH}/bin/activate" ]; then
+                        source "${VENV_PATH}/bin/activate"
+                    else
+                        echo "Virtualenv not found at ${VENV_PATH}"
+                        exit 1
+                    fi
+
                     which python
                     which pip
                     pip install --upgrade pip
                     pip install -r app/requirements.txt
                     pip list
+                    # ensure installed files are accessible to host user
+                    chmod -R a+rwX "${VENV_PATH}" || true
                 '''
             }
         }
@@ -78,11 +96,20 @@ pipeline {
 
         stage('Unit Tests') {
             agent {
-                docker { image 'python:3.12-slim' }
+                docker {
+                    image 'python:3.12-slim'
+                    args '--user root:root'
+                }
             }
             steps {
                 sh '''
-                    source "${VENV_PATH}/bin/activate"
+                    if [ -f "${VENV_PATH}/bin/activate" ]; then
+                        source "${VENV_PATH}/bin/activate"
+                    else
+                        echo "Virtualenv not found at ${VENV_PATH}"
+                        exit 1
+                    fi
+
                     "${VENV_PATH}/bin/python" -m pytest app/tests/ -v --cov=app/src --cov-report=xml
                 '''
             }
