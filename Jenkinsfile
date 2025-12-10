@@ -17,8 +17,14 @@ pipeline {
         
         stage('Install Dependencies') {
             steps {
-                sh 'python -m pip install --upgrade pip'
-                sh 'pip install -r app/requirements.txt'
+                sh '''
+                    # Install Python 3 and pip if not present
+                    command -v python3 >/dev/null 2>&1 || apt-get update && apt-get install -y python3 python3-pip
+            
+                    # Upgrade pip and install dependencies
+                    python3 -m pip install --upgrade pip
+                    python3 -m pip install -r app/requirements.txt
+                '''
             }
         }
         
