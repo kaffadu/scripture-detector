@@ -6,6 +6,7 @@ pipeline {
         IMAGE_NAME = 'scripture-detector'
         SONAR_HOST_URL = 'http://192.168.1.164/:9000'
         SONAR_TOKEN = credentials('sonarqube')
+        VENV_PATH = "${WORKSPACE}/venv"
     }
     
     stages {
@@ -18,19 +19,13 @@ pipeline {
         stage('Setup Python Environment') {
             steps {
                 sh '''
-                   # Install Python 3 and venv package
-                    sudo apt-get update
+                   sudo apt-get update
                     sudo apt-get install -y python3 python3-venv python3-pip
-                    
-                    # Check Python version for debugging
                     python3 --version
+                    python3 -m venv "${VENV_PATH}"
                     
-                    # Create virtual environment in workspace
-                    python3 -m venv "${WORKSPACE}/venv"
-                    
-                    # Verify venv creation
-                    if [ -f "${WORKSPACE}/venv/bin/activate" ]; then
-                        echo "Virtual environment created successfully"
+                    if [ -f "${VENV_PATH}/bin/activate" ]; then
+                        echo "Virtual environment created"
                     else
                         echo "Failed to create virtual environment"
                         exit 1
@@ -41,20 +36,11 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''
-                    # Activate virtual environment
-                    source "${WORKSPACE}/venv/bin/activate"
-                    
-                    # Check we're using venv Python
+                    source "${VENV_PATH}/bin/activate"
                     which python
                     which pip
-                    
-                    # Upgrade pip within venv
                     pip install --upgrade pip
-                    
-                    # Install project dependencies
                     pip install -r app/requirements.txt
-                    
-                    # Verify installation
                     pip list
                 '''
             }
