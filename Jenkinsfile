@@ -40,7 +40,6 @@ pipeline {
                     which python
                     which pip
                     pip install --upgrade pip
-                    pip install app/requirements.txt
                     pip list
                 '''
             }
