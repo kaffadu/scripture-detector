@@ -18,14 +18,23 @@ pipeline {
         stage('Setup Python Environment') {
             steps {
                 sh '''
-                    # Install Python 3 and pip if not present
-                    if ! command -v python3 >/dev/null 2>&1; then
-                        sudo apt-get update
-                        sudo apt-get install -y python3 python3-venv
-                fi
+                   # Install Python 3 and venv package
+                    sudo apt-get update
+                    sudo apt-get install -y python3 python3-venv python3-pip
+                    
+                    # Check Python version for debugging
+                    python3 --version
+                    
                     # Create virtual environment in workspace
                     python3 -m venv "${WORKSPACE}/venv"
-                '''
+                    
+                    # Verify venv creation
+                    if [ -f "${WORKSPACE}/venv/bin/activate" ]; then
+                        echo "Virtual environment created successfully"
+                    else
+                        echo "Failed to create virtual environment"
+                        exit 1
+                    fi
             }
         }
 
@@ -34,10 +43,14 @@ pipeline {
                 sh '''
                     # Activate virtual environment
                     source "${WORKSPACE}/venv/bin/activate"
-
+                    
+                    # Check we're using venv Python
+                    which python
+                    which pip
+                    
                     # Upgrade pip within venv
                     pip install --upgrade pip
-
+                    
                     # Install project dependencies
                     pip install -r app/requirements.txt
                     
