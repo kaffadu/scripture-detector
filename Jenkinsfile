@@ -18,8 +18,8 @@ pipeline {
         
         stage('Setup Python Environment') {
             steps {
-                sh '''
-                   sudo apt-get update
+                sh '''  // <-- This opening triple quote
+                    sudo apt-get update
                     sudo apt-get install -y python3 python3-venv python3-pip
                     python3 --version
                     python3 -m venv "${VENV_PATH}"
@@ -30,8 +30,9 @@ pipeline {
                         echo "Failed to create virtual environment"
                         exit 1
                     fi
-            }
-        }
+                '''  // <-- ADD THIS MISSING CLOSING TRIPLE QUOTE
+            }  // <-- This closes the 'steps' block
+        }  // <-- This closes the 'stage' block
 
         stage('Install Dependencies') {
             steps {
@@ -40,6 +41,7 @@ pipeline {
                     which python
                     which pip
                     pip install --upgrade pip
+                    pip install -r app/requirements.txt
                     pip list
                 '''
             }
