@@ -1,6 +1,6 @@
 pipeline {
     agent any
-    
+
     environment {
         DOCKER_REGISTRY = 'index.docker.io'
         IMAGE_NAME = 'scripture-detector'
@@ -8,31 +8,31 @@ pipeline {
         SONAR_TOKEN = credentials('sonarqube')
         VENV_PATH = "${WORKSPACE}/venv"
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
-        
+
         stage('Setup Python Environment') {
             steps {
-                sh '''  // <-- This opening triple quote
+                sh '''
                     sudo apt-get update
                     sudo apt-get install -y python3 python3-venv python3-pip
                     python3 --version
                     python3 -m venv "${VENV_PATH}"
-                    
+
                     if [ -f "${VENV_PATH}/bin/activate" ]; then
                         echo "Virtual environment created"
                     else
                         echo "Failed to create virtual environment"
                         exit 1
                     fi
-                '''  // <-- ADD THIS MISSING CLOSING TRIPLE QUOTE
-            }  // <-- This closes the 'steps' block
-        }  // <-- This closes the 'stage' block
+                '''
+            }
+        }
 
         stage('Install Dependencies') {
             steps {
@@ -46,7 +46,7 @@ pipeline {
                 '''
             }
         }
-        
+
         stage('Code Quality - SonarQube') {
             steps {
                 withSonarQubeEnv('SonarQube') {
@@ -61,7 +61,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Unit Tests') {
             steps {
                 sh '''
@@ -76,7 +76,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Build Docker Image') {
             steps {
                 script {
@@ -84,7 +84,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Security Scan') {
             steps {
                 sh '''
@@ -95,7 +95,7 @@ pipeline {
                 '''
             }
         }
-        
+
         stage('Push to Registry') {
             steps {
                 script {
@@ -106,7 +106,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Deploy to Kubernetes') {
             when {
                 branch 'main'
@@ -117,7 +117,7 @@ pipeline {
                         kubectl set image deployment/scripture-detector \
                         main=${DOCKER_REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER} \
                         --namespace=default
-                        
+
                         kubectl rollout status deployment/scripture-detector \
                         --namespace=default
                     '''
@@ -125,7 +125,7 @@ pipeline {
             }
         }
     }
-    
+
     post {
         always {
             cleanWs()
