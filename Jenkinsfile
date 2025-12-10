@@ -15,18 +15,34 @@ pipeline {
             }
         }
         
-        stage('Install Dependencies') {
+        stage('Setup Python Environment') {
             steps {
                 sh '''
                     # Install Python 3 and pip if not present
                     if ! command -v python3 >/dev/null 2>&1; then
                         sudo apt-get update
-                        sudo apt-get install -y python3 python3-pip
+                        sudo apt-get install -y python3 python3-venv
                 fi
-            
-                    # Upgrade pip and install dependencies
-                    python3 -m pip install --upgrade pip --user
-                    python3 -m pip install -r app/requirements.txt --user
+                    # Create virtual environment in workspace
+                    python3 -m venv "${WORKSPACE}/venv"
+                '''
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                    # Activate virtual environment
+                    source "${WORKSPACE}/venv/bin/activate"
+
+                    # Upgrade pip within venv
+                    pip install --upgrade pip
+
+                    # Install project dependencies
+                    pip install -r app/requirements.txt
+                    
+                    # Verify installation
+                    pip list
                 '''
             }
         }
