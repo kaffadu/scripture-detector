@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOCKER_REGISTRY = 'index.docker.io'
         IMAGE_NAME = 'scripture-detector'
-        SONAR_HOST_URL = 'http://192.168.1.164/:9000'
+        SONAR_HOST_URL = 'http://192.168.1.164:9000'
         SONAR_TOKEN = credentials('sonarqube')
         VENV_PATH = "${WORKSPACE}/venv"
     }
@@ -19,7 +19,7 @@ pipeline {
         stage('Setup Python Environment') {
             steps {
                 sh '''
-                    # Do not run apt-get here (requires sudo). Instead ensure python exists on the agent.
+                    # Do not run apt-get here (requires sudo). Ensure python exists on the agent.
                     if command -v python3 >/dev/null 2>&1; then
                         PY=python3
                     elif command -v python >/dev/null 2>&1; then
@@ -60,11 +60,11 @@ pipeline {
                 withSonarQubeEnv('SonarQube') {
                     sh '''
                         sonar-scanner \
-                        -Dsonar.projectKey=scripture-detector \
-                        -Dsonar.sources=app/src \
-                        -Dsonar.host.url=${SONAR_HOST_URL} \
-                        -Dsonar.login=${SONAR_TOKEN} \
-                        -Dsonar.python.version=3.9
+                          -Dsonar.projectKey=scripture-detector \
+                          -Dsonar.sources=app/src \
+                          -Dsonar.host.url=${SONAR_HOST_URL} \
+                          -Dsonar.login=${SONAR_TOKEN} \
+                          -Dsonar.python.version=3.9
                     '''
                 }
             }
@@ -73,8 +73,8 @@ pipeline {
         stage('Unit Tests') {
             steps {
                 sh '''
-                    cd app
-                    python -m pytest tests/ -v --cov=src --cov-report=xml
+                    source "${VENV_PATH}/bin/activate"
+                    "${VENV_PATH}/bin/python" -m pytest app/tests/ -v --cov=app/src --cov-report=xml
                 '''
             }
             post {
@@ -97,9 +97,9 @@ pipeline {
             steps {
                 sh '''
                     trivy image --format table \
-                    --exit-code 0 \
-                    --severity HIGH,CRITICAL \
-                    ${DOCKER_REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}
+                      --exit-code 0 \
+                      --severity HIGH,CRITICAL \
+                      ${DOCKER_REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}
                 '''
             }
         }
@@ -123,11 +123,11 @@ pipeline {
                 script {
                     sh '''
                         kubectl set image deployment/scripture-detector \
-                        main=${DOCKER_REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER} \
-                        --namespace=default
+                          main=${DOCKER_REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER} \
+                          --namespace=default
 
                         kubectl rollout status deployment/scripture-detector \
-                        --namespace=default
+                          --namespace=default
                     '''
                 }
             }
@@ -139,3 +139,11 @@ pipeline {
             cleanWs()
         }
         failure {
+            emailext(
+                subject: "Pipeline Failed: ${env.JOB_NAME} - ${env.BUILD_NUMBER}",
+                body: "Check console output at ${env.BUILD_URL}",
+                to: 'team@yourdomain.com'
+            )
+        }
+    }
+}
